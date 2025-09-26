@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Swarm Lern-App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            background-color: #1e1e1e;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+        }
+        .nav-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-button:hover {
+            transform: scale(1.05);
+        }
+        .nav-button.active {
+            background-color: #2563eb;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 9999px;
+        }
+        .status-running {
+            background-color: #0d9488;
+            color: #ccfbf1;
+        }
+        .status-terminating {
+            background-color: #b91c1c;
+            color: #fee2e2;
+        }
+        .status-restored {
+            background-color: #1e40af;
+            color: #dbeafe;
+        }
+        .status-crashing {
+            background-color: #7f1d1d;
+            color: #fee2e2;
+        }
+        .terminal {
+            background-color: #1a1a1a;
+            color: #d1fae5;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 0.75rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+            padding: 1rem;
+            min-height: 200px;
+        }
+        .terminal-input {
+            background-color: transparent;
+            border: none;
+            outline: none;
+            color: #d1fae5;
+            width: calc(100% - 1.5rem);
+            caret-color: #d1fae5;
+        }
+        .code-block {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            white-space: pre;
+            margin-top: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #dashboard-canvas {
+            background-color: #2d2d2d;
+            border-radius: 1.5rem;
+        }
+        .canvas-container {
+            width: 100%;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .anleitung-content h1, .anleitung-content h2, .anleitung-content h3, .anleitung-content h4, .anleitung-content p, .anleitung-content pre, .anleitung-content ul, .anleitung-content table {
+            color: #e2e8f0;
+            margin-bottom: 1rem;
+        }
+        .anleitung-content h1 { font-size: 2.5rem; font-weight: 700; margin-top: 2rem; }
+        .anleitung-content h2 { font-size: 2rem; font-weight: 600; margin-top: 1.5rem; }
+        .anleitung-content h3 { font-size: 1.5rem; font-weight: 600; margin-top: 1.25rem; }
+        .anleitung-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .anleitung-content th, .anleitung-content td {
+            padding: 0.75rem;
+            border: 1px solid #4a5568;
+            text-align: left;
+        }
+        .anleitung-content th {
+            background-color: #2d3748;
+            font-weight: 700;
+        }
+        .anleitung-content p code {
+            background-color: #2d3748;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .anleitung-content pre {
+            background-color: #1a202c;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .anleitung-content ul {
+            list-style-type: disc;
+            padding-left: 2rem;
+        }
+        .anleitung-content .lead {
+            font-size: 1.25rem;
+            font-style: italic;
+            border-left: 4px solid #4299e1;
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+        /* Custom Styling for Legal Section */
+        #datenschutz-impressum-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #e2e8f0;
+            border-bottom: 2px solid #4a5568;
+            padding-bottom: 0.5rem;
+        }
+        #datenschutz-impressum-section h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #4299e1;
+        }
+        #datenschutz-impressum-section h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        #datenschutz-impressum-section ul {
+            list-style-type: disc;
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="container mx-auto">
+        <header class="text-center mb-4">
+            <h1 class="text-5xl font-extrabold text-gray-100 mb-2">Docker Swarm Lern-App 🐳</h1>
+            <p class="text-xl text-gray-400">Lernen Sie Docker Swarm mit Simulation, Quiz und Lexikon.</p>
+        </header>
+
+        <nav class="flex justify-center space-x-4 mb-8">
+            <button id="nav-startseite" class="nav-button px-6 py-3 rounded-full text-lg font-medium text-gray-300 bg-gray-700 active">Startseite</button>
+            <button id="nav-simulator" class="nav-button px-6 py-3 rounded-full text-lg font-medium text-gray-300 bg-gray-700">Simulator & Dashboard</button>
+            <button id="nav-quiz" class="nav-button px-6 py-3 rounded-full text-lg font-medium text-gray-300 bg-gray-700">Quiz</button>
+            <button id="nav-lexikon" class="nav-button px-6 py-3 rounded-full text-lg font-medium text-gray-300 bg-gray-700">Wissenslexikon</button>
+            <button id="nav-prezi" class="nav-button px-6 py-3 rounded-full text-lg font-medium text-gray-300 bg-gray-700">Präsentation</button>
+            <button id="nav-anleitung" class="nav-button px-6 py-3 rounded-full text-lg font-medium text-gray-300 bg-gray-700">Anleitung</button>
+            <button id="nav-quellen" class="nav-button px-6 py-3 rounded-full text-lg font-medium text-gray-300 bg-gray-700">Quellen</button>
+        </nav>
+
+        <main class="card p-8">
+            <section id="startseite-section" class="active-section">
+                <div class="flex flex-col items-center justify-center p-8 text-center">
+                    <h2 class="text-3xl font-bold text-gray-100 mb-4">Willkommen bei der Docker Swarm Lern-App</h2>
+                    <p class="text-lg text-gray-400 max-w-2xl">
+                        Diese interaktive Anwendung hilft dir, die Kernkonzepte von Docker Swarm auf spielerische Weise kennenzulernen und zu vertiefen.
+                        Nutze den Simulator, um Services zu erstellen und zu verwalten, teste dein Wissen im Quiz und finde wichtige Begriffe im Wissenslexikon.
+                    </p>
+                </div>
+            </section>
+
+            <section id="simulator-section" class="hidden">
+                <h2 class="text-3xl font-bold text-gray-100 mb-4">Swarm-Simulator</h2>
+                <div class="mb-6">
+                    <p class="text-gray-400 mb-2">Geben Sie Befehle ein: <code class="bg-gray-700 text-gray-300 p-1 rounded">docker service ls</code> (zeigt Services an), <code class="bg-gray-700 text-gray-300 p-1 rounded">docker service rm web-service</code> (löscht einen Service), <code class="bg-gray-700 text-gray-300 p-1 rounded">docker service scale web-service=&lt;zahl&gt;</code> (skaliert die Tasks) oder <code class="bg-gray-700 text-gray-300 p-1 rounded">docker service update --force web-service</code> (startet ein Rolling Update, bei dem Tasks nacheinander ersetzt werden).</p>
+                    <p class="text-gray-400 mb-2">Im Dashboard wird die Last der Tasks visuell als Prozentsatz angezeigt. Dieser Wert ändert sich dynamisch je nach Anzahl der laufenden Tasks.</p>
+                    <div class="terminal">
+                        <pre id="output-text" class="text-sm whitespace-pre-wrap"></pre>
+                        <div class="flex items-center">
+                            <span class="text-green-400">$</span>
+                            <input type="text" id="kubectl-input" class="terminal-input ml-2" spellcheck="false" placeholder="docker ...">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col lg:flex-row lg:space-x-8 mt-6">
+                    <div id="pod-list-container" class="lg:w-1/2">
+                        <h3 class="text-xl font-semibold mb-2">Aktive Tasks:</h3>
+                        <div id="pod-list" class="space-y-2">
+                            </div>
+                    </div>
+                    
+                    <div class="lg:w-1/2 flex flex-col items-center mt-6 lg:mt-0">
+                        <h3 class="text-xl font-semibold mb-2">Dashboard (Worker Node):</h3>
+                        <div class="canvas-container">
+                             <canvas id="dashboard-canvas" class="w-full h-full max-w-full rounded-xl"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quiz-section" class="hidden">
+                <h2 class="text-3xl font-bold text-gray-100 mb-6">Quiz</h2>
+                <div id="quiz-content">
+                    </div>
+                <div id="quiz-buttons" class="mt-6 flex justify-center">
+                    <button id="start-quiz-button" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-colors">Quiz starten</button>
+                </div>
+            </section>
+
+            <section id="lexikon-section" class="hidden">
+                <h2 class="text-3xl font-bold text-gray-100 mb-4">Wissenslexikon</h2>
+                <div id="lexikon-summary" class="bg-blue-900 p-6 rounded-xl border border-blue-800 mb-6"></div>
+                <div class="mb-4">
+                    <input type="text" id="lexikon-search" class="w-full p-3 bg-gray-800 text-gray-200 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Begriffe suchen...">
+                </div>
+                <div id="lexikon-content" class="space-y-6">
+                    </div>
+                <div class="mt-8 text-center text-gray-400">
+                    <p>Weitere Informationen finden Sie in der offiziellen Dokumentation:</p>
+                    <a href="https://docs.docker.com/engine/swarm/" target="_blank" class="text-blue-500 hover:underline">docs.docker.com/engine/swarm/</a>
+                </div>
+            </section>
+            
+            <section id="prezi-section" class="hidden">
+                <h2 class="text-3xl font-bold text-gray-100 mb-4">Präsentation</h2>
+                <div class="card p-4">
+                    <p class="text-gray-400 mb-4">Hier sehen Sie die Prezi-Präsentation über die Grundlagen von Docker Swarm.</p>
+                    <iframe src="https://prezi.com/p/embed/gBUe4X5K7YTeScFim8Nw/" width="100%" height="600" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen allow="autoplay; fullscreen"></iframe>
+                </div>
+            </section>
+
+            <section id="anleitung-section" class="hidden anleitung-content">
+                <h1>DOCKER SWARM EINFÜHRUNG - FERTIGER WEBSERVER IN 6 SCHRITTEN</h1>
+                <p class="lead">Willkommen in der Welt von Docker Swarm! Mit dieser Anleitung zeige ich euch, wie Swarm moderne Anwendungen verwaltet.</p>
+                <p>Wir werden einen fertigen Webserver (Nginx) aus dem Internet als Service im Swarm starten – ganz ohne eine einzige Zeile Code selbst schreiben zu müssen. Das Ziel ist es, in kürzester Zeit die Kernkonzepte zu demonstrieren, die Docker Swarm zur einfachen Container-Orchestrierung machen:</p>
+                <ul>
+                    <li><strong>Service-Definition:</strong> Wie man einen Container als Service im Cluster startet.</li>
+                    <li><strong>Load Balancing:</strong> Wie der Service automatisch den Traffic verteilt.</li>
+                    <li><strong>Skalierung:</strong> Wie man die Anwendung in Sekundenschnelle vervielfacht.</li>
+                    <li><strong>Selbstheilung:</strong> Wie Swarm Task-Ausfälle automatisch repariert.</li>
+                </ul>
+                <p>Folgt den Anweisungen im Terminal exakt – los geht’s!</p>
+                
+                <hr class="my-6 border-gray-700">
+                
+                <h2>Voraussetzungen</h2>
+                <p>Diese Anleitung setzt voraus, dass auf deinem Rechner bereits folgende Tools installiert und lauffähig sind:</p>
+                <ul>
+                    <li><strong>Docker Engine</strong> (z. B. Docker Desktop unter Windows/macOS oder docker.io unter Linux)</li>
+                    <li><strong>Ein initialisierter Swarm</strong> (durch <code class="bg-gray-700 text-gray-300 p-1 rounded">docker swarm init</code>)</li>
+                </ul>
+                <p>Installationsanleitungen findest du auf den offiziellen Seiten:</p>
+                <ul>
+                    <li><a href="https://docs.docker.com/get-docker/" target="_blank" class="text-blue-400 hover:underline">Docker: https://docs.docker.com/get-docker/</a></li>
+                    <li><a href="https://docs.docker.com/engine/swarm/swarm-tutorial/" target="_blank" class="text-blue-400 hover:underline">Swarm Tutorial: https://docs.docker.com/engine/swarm/swarm-tutorial/</a></li>
+                </ul>
+                
+                <hr class="my-6 border-gray-700">
+
+                <h2>1. Swarm initialisieren und Service erstellen (Terminal-Befehle)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aktion</th>
+                            <th>Kommando</th>
+                            <th>Erklärung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Swarm initialisieren</td>
+                            <td><code>docker swarm init</code></td>
+                            <td>Initialisiert den Swarm-Modus auf dem aktuellen Host und macht ihn zum Manager-Node.</td>
+                        </tr>
+                        <tr>
+                            <td>Service erstellen</td>
+                            <td><code>docker service create --name web-service --replicas 2 -p 80:80 nginx:latest</code></td>
+                            <td>Erstellt den Service **web-service** mit 2 Tasks und öffnet Port 80.</td>
+                        </tr>
+                        <tr>
+                            <td>Status prüfen</td>
+                            <td><code>docker service ls</code></td>
+                            <td>Überprüft den Status des Services. Warte, bis **REPLICAS** **2/2** ist.</td>
+                        </tr>
+                        <tr>
+                            <td>Task-Status prüfen</td>
+                            <td><code>docker service ps web-service</code></td>
+                            <td>Zeigt die einzelnen **Tasks** (Container) des Services an und ihren Status.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <hr class="my-6 border-gray-700">
+
+                <h2>2. Präsentation: Zugreifen und Demos</h2>
+                <h3>Anwendung im Browser aufrufen:</h3>
+                <p>Die Anwendung ist über die IP-Adresse des Manager-Nodes (oder `localhost`, wenn der Swarm lokal läuft) auf Port 80 erreichbar.</p>
+
+                <h3>Demo 1: Skalierung (Horizontale Skalierung)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aktion</th>
+                            <th>Kommando</th>
+                            <th>Erklärung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Skalieren auf 5</td>
+                            <td><code>docker service scale web-service=5</code></td>
+                            <td>Erhöht die gewünschte Task-Anzahl auf 5. Swarm reagiert sofort.</td>
+                        </tr>
+                        <tr>
+                            <td>Tasks prüfen</td>
+                            <td><code>docker service ls</code></td>
+                            <td>Zeigt, dass 5 von 5 Tasks laufen (Gesamt: 5/5).</td>
+                        </tr>
+                        <tr>
+                            <td>Detaillierte Tasks prüfen</td>
+                            <td><code>docker service ps web-service</code></td>
+                            <td>Zeigt die neuen Tasks (Container) an, die erstellt wurden.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Demo 2: Selbstheilung (Ausfallsicherheit)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aktion</th>
+                            <th>Kommando</th>
+                            <th>Erklärung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Namen ermitteln</td>
+                            <td><code>docker service ps web-service</code></td>
+                            <td>Notiere den **Namen/ID** eines laufenden Tasks (z.B. <code>web-service.1.xyz...</code>).</td>
+                        </tr>
+                        <tr>
+                            <td>Task löschen (simulierter Absturz)</td>
+                            <td><code>docker service rm &lt;SERVICE_ID_ODER_NAME&gt;</code></td>
+                            <td>**HINWEIS:** Im Simulator verwenden wir `docker service rm web-service`, um den ganzen Service zu löschen, um Platz für die Skalierung/Updates zu schaffen. Bei einem echten Absturz würde Swarm den Task selbst neu starten.</td>
+                        </tr>
+                        <tr>
+                            <td>Status prüfen</td>
+                            <td><code>docker service ls</code></td>
+                            <td>Zeigt, dass der Service kurzzeitig nicht mehr die gewünschte Anzahl hat, aber Swarm sofort neue Tasks erstellt.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <hr class="my-6 border-gray-700">
+
+                <h2>3. Aufräumen</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aktion</th>
+                            <th>Kommando</th>
+                            <th>Erklärung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Service löschen</td>
+                            <td><code>docker service rm web-service</code></td>
+                            <td>Löscht den Service und damit alle gestarteten Tasks (Container).</td>
+                        </tr>
+                        <tr>
+                            <td>Swarm-Modus verlassen</td>
+                            <td><code>docker swarm leave --force</code></td>
+                            <td>Deaktiviert den Swarm-Modus auf dem Manager-Node (falls gewünscht).</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <section id="quellen-section" class="hidden">
+                <h2 class="text-3xl font-bold text-gray-100 mb-4">Quellen & Ressourcen</h2>
+                <div class="card p-4">
+                    <p class="text-gray-400 mb-4">Hier findest du nützliche Links und Quellen für dein Docker Swarm-Studium.</p>
+                    <ul class="list-disc space-y-2 text-gray-300">
+                        <li><a href="https://docs.docker.com/engine/swarm/" target="_blank" class="text-blue-500 hover:underline"><strong>Offizielle Docker Swarm Dokumentation:</strong></a> Die offizielle Quelle für alle Swarm-Konzepte und Befehle.</li>
+                        <li><a href="https://docs.docker.com/compose/compose-file/compose-version-3/" target="_blank" class="text-blue-500 hover:underline"><strong>Docker Compose (Stack) Dateiformat:</strong></a> Wichtig für das Verständnis der `docker stack deploy`-Dateien.</li>
+                        <li><a href="https://docs.docker.com/engine/reference/commandline/service_ls/" target="_blank" class="text-blue-500 hover:underline"><strong>Docker Service CLI Reference:</strong></a> Detaillierte Befehlsreferenz für Service-Operationen.</li>
+                        <li><a href="https://docs.docker.com/get-started/overview/" target="_blank" class="text-blue-500 hover:underline"><strong>Docker Engine Übersicht:</strong></a> Für das grundlegende Verständnis von Containern, der Basis von Swarm.</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="datenschutz-impressum-section" class="hidden anleitung-content">
+                <h1>Impressum & Datenschutz</h1>
+
+                <h2>Impressum</h2>
+
+                <h3>Angaben gemäß § 5 TMG (Telemediengesetz)</h3>
+                <p><strong>Stephan Teege</strong><br>Buchholzgasse 24<br>99425 Weimar</p>
+
+                <h3>Kontakt</h3>
+                <p><strong>E-Mail:</strong> <a href="mailto:stephan.teege@gmx.de" class="text-blue-400 hover:underline">stephan.teege@gmx.de</a><br>
+                    <strong>Telefon:</strong> 017647191285</p>
+
+                <h3>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</h3>
+                <p>Stephan Teege<br>Buchholzgasse 24, 99425 Weimar</p>
+                
+                <h3 class="mt-4">Hinweis zum Projekt</h3>
+                <p>Die Docker Swarm Lern-App wurde im Rahmen des Kurses VI23 als akademisches Projekt erstellt. Die Anwendung dient ausschließlich zu Lern-, Demonstrations- und Informationszwecken rund um die Kernkonzepte von Docker Swarm (z.B. Services, Tasks, Stacks).</p>
+                <p>Der enthaltene Simulator ist eine vereinfachte Darstellung und ersetzt keine echte Docker Swarm-Umgebung. Es handelt sich um kein kommerzielles oder offizielles Angebot.</p>
+
+                <h2 class="mt-8">Datenschutzerklärung</h2>
+
+                <h3>1. Verantwortliche Stelle</h3>
+                <p>Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br>
+                    <strong>Stephan Teege</strong><br>Buchholzgasse 24<br>99425 Weimar<br>
+                    E-Mail: stephan.teege@gmx.de</p>
+
+                <h3>2. Grundsätze der Datenverarbeitung</h3>
+                <p>Diese Website ist ein nicht-kommerzielles, akademisches Projekt. Die gesamte Anwendungslogik (Simulator, Quiz-Auswertung) findet **lokal im Browser** des Nutzers statt. Wir speichern **keine personenbezogenen Daten** unserer Nutzer dauerhaft auf eigenen Systemen. Eine Verarbeitung erfolgt lediglich durch das Hosting und die Einbindung externer Dienste.</p>
+
+                <h3>3. Hosting und Server-Log-Dateien (GitHub Pages)</h3>
+                <p>Diese Website wird über **GitHub Pages** (Anbieter: GitHub, Inc., USA) gehostet. Beim Besuch der Website verarbeitet GitHub automatisch Informationen, die für den Betrieb und die Sicherheit notwendig sind (Server-Log-Dateien). Dazu gehören die **IP-Adresse**, der Zeitpunkt des Zugriffs und der Browsertyp.</p>
+                <p>Die Verarbeitung erfolgt aufgrund unseres berechtigten Interesses an einem technisch fehlerfreien und sicheren Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Die Datenübermittlung in die USA ist dabei nicht ausgeschlossen.</p>
+
+                <h3>4. Externe Einbindung von Schriftarten und Design (CDNs)</h3>
+                <p>Zur einheitlichen Darstellung und schnellen Ladegeschwindigkeit nutzt diese App externe Dienste, sogenannte Content Delivery Networks (CDNs). Beim Aufruf der Seite baut Ihr Browser eine direkte Verbindung zu den Servern dieser Anbieter auf, wodurch Ihre **IP-Adresse** an diese übermittelt wird.</p>
+
+                <h4>a) Google Fonts</h4>
+                <p>Wir verwenden **Google Fonts** für die Schriftart 'Inter'.</p>
+                <ul>
+                    <li>**Zweck:** Einheitliche und ästhetische Darstellung der Website.</li>
+                    <li>**Rechtsgrundlage:** Berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO).</li>
+                    <li>**Anbieter:** Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland.</li>
+                    <li>**Hinweis:** Die Übermittlung der IP-Adresse an Google ist notwendig, um die Schriftarten zu laden.</li>
+                </ul>
+                
+                <h4>b) Tailwind CSS CDN</h4>
+                <p>Zum Laden des Styling-Frameworks wird ein CDN verwendet.</p>
+                <ul>
+                    <li>**Zweck:** Schnelles und zuverlässiges Laden des Designs.</li>
+                    <li>**Rechtsgrundlage:** Berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO).</li>
+                    <li>**Hinweis:** Auch hierbei wird Ihre IP-Adresse an den CDN-Anbieter übermittelt.</li>
+                </ul>
+
+                <h3>5. Ihre Rechte als betroffene Person</h3>
+                <p>Sie haben uns gegenüber hinsichtlich der Sie betreffenden personenbezogenen Daten folgende Rechte:</p>
+                <ul>
+                    <li>Recht auf Auskunft (Art. 15 DSGVO)</li>
+                    <li>Recht auf Berichtigung (Art. 16 DSGVO)</li>
+                    <li>Recht auf Löschung (Art. 17 DSGVO)</li>
+                    <li>Recht auf Einschränkung der Verarbeitung (Art. 18 DSGVO)</li>
+                    <li>Recht auf Datenübertragbarkeit (Art. 20 DSGVO)</li>
+                    <li>Recht auf Widerspruch gegen die Verarbeitung (Art. 21 DSGVO)</li>
+                </ul>
+                <p>Wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer Daten gegen das Datenschutzrecht verstößt, haben Sie zudem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.</p>
+            </section>
+        </main>
+
+        <footer class="mx-auto text-center mt-8 p-4 text-sm text-gray-500">
+            <p>Erstellt von: Stephan Teege | Kurs: VI23 | Version: 1.8 (Stand: 25.09.2025)</p>
+            <p class="mt-1">
+                <button id="nav-impressum" class="text-blue-500 hover:underline">Impressum & Datenschutz</button>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Global state and UI elements
+        const navButtons = document.querySelectorAll('nav button');
+        // NEU: Hinzufügen der neuen Sektion zum Sektionen-Objekt
+        const sections = {
+            startseite: document.getElementById('startseite-section'),
+            simulator: document.getElementById('simulator-section'),
+            quiz: document.getElementById('quiz-section'),
+            lexikon: document.getElementById('lexikon-section'),
+            prezi: document.getElementById('prezi-section'),
+            anleitung: document.getElementById('anleitung-section'),
+            quellen: document.getElementById('quellen-section'),
+            // NEUE SEKTION
+            legal: document.getElementById('datenschutz-impressum-section') 
+        };
+        const lexikonSummary = document.getElementById('lexikon-summary');
+        
+        // Füge den Event Listener für den Impressum-Button im Footer hinzu
+        document.getElementById('nav-impressum').addEventListener('click', () => {
+            // Alle Sektionen und Nav-Buttons deaktivieren
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            Object.values(sections).forEach(section => section.classList.add('hidden'));
+
+            // Rechtliche Sektion anzeigen
+            sections.legal.classList.remove('hidden');
+        });
+
+        // --- Navigation Logic ---
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and sections
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                Object.values(sections).forEach(section => section.classList.add('hidden'));
+
+                // Add active class to the clicked button and show the corresponding section
+                button.classList.add('active');
+                if (button.id === 'nav-startseite') {
+                    sections.startseite.classList.remove('hidden');
+                } else if (button.id === 'nav-simulator') {
+                    sections.simulator.classList.remove('hidden');
+                    // FIX: Größe der Canvas beim Anzeigen der Sektion neu berechnen.
+                    resizeCanvas();
+                } else if (button.id === 'nav-quiz') {
+                    sections.quiz.classList.remove('hidden');
+                } else if (button.id === 'nav-lexikon') {
+                    sections.lexikon.classList.remove('hidden');
+                    renderLexikonSummary();
+                    renderLexikon(lexikonData);
+                } else if (button.id === 'nav-prezi') {
+                    sections.prezi.classList.remove('hidden');
+                } else if (button.id === 'nav-anleitung') {
+                    sections.anleitung.classList.remove('hidden');
+                } else if (button.id === 'nav-quellen') {
+                    sections.quellen.classList.remove('hidden');
+                }
+                // HINWEIS: Hier wurde kein Fall für 'nav-impressum' mehr benötigt, da es ein separater Listener ist.
+            });
+        });
+
+        // --- Simulator & Dashboard Logic ---
+        const kubectlInput = document.getElementById('kubectl-input'); // Beibehalten des Namens, um Tipparbeit zu reduzieren
+        const outputText = document.getElementById('output-text');
+        const podListContainer = document.getElementById('pod-list');
+        const dashboardCanvas = document.getElementById('dashboard-canvas');
+        const ctx = dashboardCanvas.getContext('2d');
+        const maxTasks = 10;
+        let tasks = []; // Äquivalent zu Pods
+        let taskCounter = 0;
+        let serviceVersion = 1; // Äquivalent zu deploymentVersion
+        let desiredReplicas = 2;
+        let isInitialized = false;
+        let rollingUpdateInProgress = false;
+        
+        // Node definitions for the dashboard (simplified to a single area)
+        const node = { id: 'manager-node', x: 0, y: 0, width: 0, height: 0, tasks: [] }; // Name auf Swarm-Node geändert
+
+        // Resize canvas to fit container
+        function resizeCanvas() {
+            const container = dashboardCanvas.parentElement;
+            // Nur neu setzen, wenn der Container sichtbar ist
+            if (container.offsetWidth > 0 && container.offsetHeight > 0) {
+                 dashboardCanvas.width = container.clientWidth;
+                 dashboardCanvas.height = container.clientHeight;
+            } else {
+                 // Fallback für den Fall, dass es beim Start aufgerufen wird, bevor es sichtbar ist
+                 dashboardCanvas.width = 1;
+                 dashboardCanvas.height = 1;
+                 return;
+            }
+
+
+            const canvasWidth = dashboardCanvas.width;
+            const canvasHeight = dashboardCanvas.height;
+
+            node.x = canvasWidth * 0.15;
+            node.y = canvasHeight * 0.15;
+            node.width = canvasWidth * 0.7;
+            node.height = canvasHeight * 0.7;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); 
+
+        function logOutput(message) {
+            outputText.textContent += `\n> ${message}`;
+            outputText.scrollTop = outputText.scrollHeight;
+        }
+
+        function renderTasks() { // Funktion von renderPods in renderTasks umbenannt
+            podListContainer.innerHTML = '';
+            tasks.forEach(task => { // Iteriere über tasks
+                const statusClass = {
+                    'Running': 'status-running',
+                    'Terminating': 'status-terminating',
+                    'Restored': 'status-restored'
+                }[task.status];
+
+                const taskElement = document.createElement('div');
+                taskElement.classList.add('flex', 'items-center', 'space-x-2', 'bg-gray-800', 'p-2', 'rounded-lg');
+                
+                const timeSinceCreationSeconds = Math.floor((Date.now() - task.creationTime) / 1000);
+                let timeDisplay;
+                if (timeSinceCreationSeconds < 60) {
+                    timeDisplay = `${timeSinceCreationSeconds}s ago`;
+                } else {
+                    const minutes = Math.floor(timeSinceCreationSeconds / 60);
+                    const seconds = timeSinceCreationSeconds % 60;
+                    timeDisplay = `${minutes}m ${seconds}s ago`;
+                }
+
+                taskElement.innerHTML = `
+                    <span class="font-mono text-sm">${task.name} (v${task.version})</span>
+                    <span class="status-badge ${statusClass}">${task.status}</span>
+                    <span class="ml-auto text-xs text-gray-400">${timeDisplay}</span>
+                `;
+                podListContainer.appendChild(taskElement);
+            });
+        }
+        
+        setInterval(renderTasks, 100);
+        
+        function animateDashboard() {
+            ctx.clearRect(0, 0, dashboardCanvas.width, dashboardCanvas.height);
+            
+            // Draw the single Node
+            ctx.fillStyle = '#2d2d2d';
+            ctx.fillRect(node.x, node.y, node.width, node.height);
+
+            const taskRadius = 25;
+            const taskSpacing = 20;
+
+            const numCols = Math.floor(node.width / (taskRadius * 2 + taskSpacing));
+            const numRows = Math.floor(node.height / (taskRadius * 2 + taskSpacing));
+            
+            const startX = node.x + (node.width - (numCols * (taskRadius * 2 + taskSpacing))) / 2 + taskSpacing / 2;
+            const startY = node.y + (node.height - (numRows * (taskRadius * 2 + taskSpacing))) / 2 + taskSpacing / 2;
+
+            const runningTasks = tasks.filter(p => p.status === 'Running');
+            const loadShare = runningTasks.length > 0 ? (100 / runningTasks.length) : 0;
+
+            tasks.forEach((task, index) => {
+                let color;
+                let scale = 1;
+                let isFilling = false;
+                let fillPercentage = 0;
+
+                if (task.status === 'Running') {
+                    color = '#2d2d2d';
+                    isFilling = true;
+                    fillPercentage = loadShare;
+                    scale = 1;
+                } else if (task.status === 'Terminating') {
+                    color = '#b91c1c';
+                    const progress = Math.min(1, (Date.now() - task.animationStartTime) / 3000);
+                    scale = 1 - progress;
+                } else if (task.status === 'Restored') {
+                    color = '#1e40af';
+                    const progress = Math.min(1, (Date.now() - task.animationStartTime) / 4000);
+                    scale = progress;
+                }
+                
+                const col = index % numCols;
+                const row = Math.floor(index / numCols);
+
+                const taskPositionX = startX + col * (taskRadius * 2 + taskSpacing) + taskRadius;
+                const taskPositionY = startY + row * (taskRadius * 2 + taskSpacing) + taskRadius;
+                
+                task.x = taskPositionX;
+                task.y = taskPositionY;
+
+
+                ctx.save();
+                ctx.translate(task.x, task.y);
+                ctx.scale(scale, scale);
+
+                // Draw base circle
+                ctx.beginPath();
+                ctx.arc(0, 0, taskRadius, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                if (isFilling) {
+                    const startAngle = -0.5 * Math.PI; // Start at the top
+                    const endAngle = startAngle + (fillPercentage / 100) * 2 * Math.PI;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, taskRadius, startAngle, endAngle);
+                    ctx.closePath();
+                    ctx.fillStyle = '#0d9488';
+                    ctx.fill();
+                }
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '16px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // WICHTIG: Vermeidung von 'pod-deployment-' für eine bessere Anzeige.
+                const taskNumber = index + 1; 
+                ctx.fillText(taskNumber.toString(), 0, 0);
+
+                ctx.restore();
+            });
+
+            requestAnimationFrame(animateDashboard);
+        }
+        animateDashboard();
+
+        // The core "controller" logic (Reconciliation Loop)
+        function reconcileTasks() { // Funktion von reconcilePods in reconcileTasks umbenannt
+            const managedTasks = tasks.filter(t => t.controllerManaged);
+            const numManagedTasks = managedTasks.length;
+
+            if (rollingUpdateInProgress) {
+                const oldTasks = managedTasks.filter(t => t.version < serviceVersion);
+                if (oldTasks.length > 0) {
+                    const transitioningTask = managedTasks.find(t => t.status === 'Terminating' || t.status === 'Restored');
+                    if (!transitioningTask) {
+                         // Find the oldest task to update first
+                        const taskToUpdate = oldTasks.sort((a,b) => a.id - b.id)[0];
+                        taskToUpdate.status = 'Terminating';
+                        taskToUpdate.animationStartTime = Date.now();
+                        logOutput(`Starte Rolling Update von Task "${taskToUpdate.name}" (v${taskToUpdate.version})...`);
+                        setTimeout(() => {
+                            const newTask = {
+                                id: ++taskCounter,
+                                name: `web-service.${taskCounter}`, // Task-Namensschema von Swarm
+                                status: 'Restored',
+                                controllerManaged: true,
+                                creationTime: Date.now(),
+                                animationStartTime: Date.now(),
+                                version: serviceVersion,
+                                nodeId: node.id,
+                                x: 0,
+                                y: 0
+                            };
+                            const index = tasks.findIndex(t => t.id === taskToUpdate.id);
+                            if (index !== -1) {
+                                tasks.splice(index, 1, newTask);
+                            }
+                            logOutput(`Neuer Task "${newTask.name}" (v${newTask.version}) wurde erstellt.`);
+                            setTimeout(() => { newTask.status = 'Running'; }, 4000);
+                        }, 3000);
+                    }
+                } else {
+                    rollingUpdateInProgress = false;
+                    logOutput(`Rolling Update abgeschlossen. Alle Tasks sind auf Version ${serviceVersion}.`);
+                }
+            } else { // Normal scaling reconciliation
+                if (numManagedTasks < desiredReplicas) {
+                    const tasksToAdd = desiredReplicas - numManagedTasks;
+                    for (let i = 0; i < tasksToAdd; i++) {
+                        taskCounter++;
+                        const newTask = {
+                            id: taskCounter,
+                            name: `web-service.${taskCounter}`,
+                            status: 'Restored',
+                            controllerManaged: true,
+                            creationTime: Date.now(),
+                            animationStartTime: Date.now(),
+                            version: serviceVersion,
+                            nodeId: node.id,
+                            x: 0,
+                            y: 0
+                        };
+                        tasks.push(newTask);
+                        logOutput(`Task "${newTask.name}" erstellt (Reconciliation).`);
+                        setTimeout(() => { newTask.status = 'Running'; }, 4000);
+                    }
+                } else if (numManagedTasks > desiredReplicas) {
+                    const tasksToRemove = numManagedTasks - desiredReplicas;
+                    for (let i = 0; i < tasksToRemove; i++) {
+                        const taskToRemove = managedTasks[i];
+                        logOutput(`Task "${taskToRemove.name}" wird gelöscht (Reconciliation).`);
+                        
+                        taskToRemove.status = 'Terminating';
+                        taskToRemove.animationStartTime = Date.now();
+                        
+                        const index = tasks.findIndex(t => t.id === taskToRemove.id);
+                        if (index !== -1) {
+                            setTimeout(() => {
+                                const indexAfterDelay = tasks.findIndex(t => t.id === taskToRemove.id);
+                                if (indexAfterDelay !== -1) {
+                                    tasks.splice(indexAfterDelay, 1);
+                                }
+                            }, 3000);
+                        }
+                    }
+                }
+            }
+        }
+
+        function removeService() {
+            logOutput(`Service "web-service" wird gelöscht.`);
+            tasks.forEach(t => {
+                t.status = 'Terminating';
+                t.animationStartTime = Date.now();
+            });
+            setTimeout(() => {
+                tasks.length = 0;
+                logOutput(`Service "web-service" und alle Tasks wurden entfernt.`);
+                isInitialized = false;
+                rollingUpdateInProgress = false;
+                desiredReplicas = 0;
+                taskCounter = 0;
+                serviceVersion = 1;
+            }, 5000);
+        }
+        
+        // Funktion zur Initialisierung des Clusters (nur beim ersten docker service ls)
+        function initializeCluster() {
+            if (!isInitialized) {
+                // Initialisiere die Tasks basierend auf desiredReplicas (hier 2)
+                desiredReplicas = 2; // Initialwert
+                reconcileTasks();
+                // Starte den Reconciliation Loop (alle 2 Sekunden)
+                setInterval(reconcileTasks, 2000);
+                isInitialized = true;
+                logOutput("Docker Swarm Control Plane initialisiert. Service: web-service");
+            }
+        }
+
+
+        // Initial setup for the simulator
+        logOutput("Willkommen beim Docker Swarm Simulator!");
+        logOutput("Geben Sie 'docker service ls' ein, um den Service zu starten.");
+        
+        // Handle user input
+        kubectlInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                const command = kubectlInput.value.trim();
+                kubectlInput.value = '';
+                logOutput(`$ ${command}`);
+
+                if (command === 'docker service ls') {
+                    if (!isInitialized) {
+                        initializeCluster();
+                    }
+                    
+                    if (tasks.length === 0 && isInitialized) {
+                        logOutput("ID NAME MODE REPLICAS IMAGE PORTS\n6pr5mlvu3fh9 web-service replicated 0/0 nginx:latest *:80->80/tcp");
+                        logOutput("Keine Tasks gefunden. (Service ist aber definiert.)");
+                    } else if (tasks.length === 0 && !isInitialized) {
+                        logOutput("Service ist noch nicht definiert. Bitte initialisieren Sie den Service mit dem Befehl.");
+                    } else {
+                        const runningCount = tasks.filter(t => t.status === 'Running').length;
+                        const totalCount = tasks.length;
+                        const status = `${runningCount}/${totalCount}`;
+                        logOutput(`ID NAME MODE REPLICAS IMAGE PORTS`);
+                        logOutput(`6pr5mlvu3fh9 web-service replicated ${status} nginx:latest *:80->80/tcp`);
+                    }
+                } else if (command.startsWith('docker service rm')) {
+                    const parts = command.split(' ');
+                    if (parts.length === 4 && parts[3] === 'web-service') {
+                        removeService();
+                    } else {
+                        logOutput("Fehler: Ungültiger Befehl. Beispiel: 'docker service rm web-service'");
+                    }
+                } else if (command.startsWith('docker service scale')) {
+                    const parts = command.split(' ');
+                    if (parts.length === 3 && parts[1].startsWith('web-service=')) {
+                        const countPart = parts[1].split('=')[1];
+                        const count = parseInt(countPart);
+                        
+                        if (!isNaN(count) && count >= 0 && count <= maxTasks) {
+                            if (!isInitialized && count > 0) {
+                                initializeCluster();
+                            }
+                            desiredReplicas = count;
+                            logOutput(`Skaliere Service auf ${desiredReplicas} Tasks.`);
+                        } else {
+                            logOutput("Fehler: Ungültige Anzahl für Tasks. Der Wert muss eine Zahl zwischen 0 und 10 sein.");
+                        }
+                    } else {
+                        logOutput("Fehler: Ungültiger Befehl. Beispiel: 'docker service scale web-service=3'");
+                    }
+                } else if (command === 'docker service update --force web-service') {
+                    if (tasks.length > 0 && !rollingUpdateInProgress) {
+                        serviceVersion++;
+                        rollingUpdateInProgress = true;
+                        logOutput(`Starte Rolling Update für Version ${serviceVersion}.`);
+                    } else if (rollingUpdateInProgress) {
+                        logOutput("Fehler: Ein Rolling Update ist bereits im Gange.");
+                    } else {
+                        logOutput("Es gibt keine Tasks, um ein Rolling Update zu starten. Bitte 'docker service ls' eingeben.");
+                    }
+                } else if (command === 'docker service ps web-service') {
+                    if (tasks.length === 0) {
+                        logOutput("Keine Tasks für Service web-service gefunden.");
+                    } else {
+                        logOutput("ID NAME IMAGE NODE DESIRED STATE CURRENT STATE ERROR PORTS");
+                        tasks.forEach(t => {
+                            const taskStatus = t.status === 'Restored' ? 'Starting' : t.status; // Realistischerer Swarm Status
+                            logOutput(`${t.id.toString().padEnd(14)}${t.name.padEnd(25)}nginx:latest node1 ${taskStatus} ${taskStatus} 2 seconds ago`);
+                        });
+                    }
+                } else {
+                    logOutput("Unbekannter Befehl. Bitte verwenden Sie: docker service ls, docker service scale web-service=<zahl>, docker service rm web-service oder docker service update --force web-service.");
+                }
+            }
+        });
+
+        // --- Quiz Logic ---
+        const quizContent = document.getElementById('quiz-content');
+        const startQuizButton = document.getElementById('start-quiz-button');
+        const quizQuestions = [
+            {
+                question: "Was ist die kleinste, planbare Einheit in Docker Swarm?",
+                options: [
+                    "Ein Stack",
+                    "Ein Service",
+                    "Ein Task (Container)",
+                    "Ein Node"
+                ],
+                answer: "Ein Task (Container)",
+                explanation: "Ein **Task** repräsentiert einen laufenden Container, der eine Instanz des Service ist. Es ist die kleinste Einheit, die vom Swarm Scheduler geplant wird."
+            },
+            {
+                question: "Welche Komponente stellt sicher, dass die gewünschte Anzahl von Tasks läuft?",
+                options: [
+                    "Der Docker Daemon",
+                    "Der Swarm Manager (Control Plane)",
+                    "Ein Worker Node",
+                    "Docker Compose"
+                ],
+                answer: "Der Swarm Manager (Control Plane)",
+                explanation: "Der **Swarm Manager** überwacht den Cluster-Zustand und führt die sogenannte **Desire State Reconciliation** durch. Er sorgt dafür, dass die tatsächliche Anzahl der Tasks immer der im Service definierten `replicas`-Zahl entspricht."
+            },
+            {
+                question: "Welcher Befehl wird verwendet, um einen Service zu skalieren?",
+                options: [
+                    "docker stack scale",
+                    "docker service update --replicas",
+                    "docker service scale",
+                    "docker container scale"
+                ],
+                answer: "docker service scale",
+                explanation: "Der Befehl **`docker service scale <SERVICE>=<REPLICAS>`** ist der direkte Weg, die Anzahl der laufenden Tasks eines Service zu ändern."
+            },
+            {
+                question: "Was definiert ein Docker Stack?",
+                options: [
+                    "Ein einzelner Container",
+                    "Ein physischer Server",
+                    "Eine mehrschichtige Anwendung, definiert durch eine Compose-Datei",
+                    "Ein Netzwerk-Load-Balancer"
+                ],
+                answer: "Eine mehrschichtige Anwendung, definiert durch eine Compose-Datei",
+                explanation: "Ein **Stack** ist eine logische Gruppe von zusammenhängenden Services, die in einer YAML-Datei (ähnlich einer Docker Compose Datei) definiert wird. Er wird mit **`docker stack deploy`** im Swarm bereitgestellt."
+            },
+            {
+                question: "Was ist der Hauptzweck eines Service in Docker Swarm?",
+                options: [
+                    "Um Logs zu speichern",
+                    "Um persistente Daten zu verwalten",
+                    "Um eine feste Zugangs-IP und Lastverteilung für eine Gruppe von Tasks bereitzustellen",
+                    "Um den Swarm zu initialisieren"
+                ],
+                answer: "Um eine feste Zugangs-IP und Lastverteilung für eine Gruppe von Tasks bereitzustellen",
+                explanation: "Ein **Service** bietet eine abstrakte Definition Ihrer Anwendung und bietet eine stabile virtuelle IP (VIP) sowie DNS-basiertes internes Load Balancing, um Tasks zu erreichen."
+            },
+            {
+                question: "Welche Art von Update führt Docker Swarm standardmäßig durch, wenn eine neue Image-Version bereitgestellt wird?",
+                options: [
+                    "Blue/Green Deployment",
+                    "Rolling Update",
+                    "Kanarienvogel-Deployment",
+                    "Big-Bang-Update"
+                ],
+                answer: "Rolling Update",
+                explanation: "Docker Swarm führt standardmäßig **Rolling Updates** durch. Dabei werden die alten Tasks schrittweise durch neue Versionen ersetzt, um eine unterbrechungsfreie Aktualisierung (Zero-Downtime) zu gewährleisten."
+            }
+        ];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const quizResults = [];
+
+        startQuizButton.addEventListener('click', () => {
+            startQuizButton.classList.add('hidden');
+            quizContent.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            quizResults.length = 0; // Clear previous results
+            displayQuestion();
+        });
+
+        function displayQuestion() {
+            if (currentQuestionIndex >= quizQuestions.length) {
+                showQuizResult();
+                return;
+            }
+
+            const questionData = quizQuestions[currentQuestionIndex];
+            quizContent.innerHTML = `
+                <div class="mb-6">
+                    <p class="text-gray-400 text-sm mb-2">Frage ${currentQuestionIndex + 1} von ${quizQuestions.length}</p>
+                    <p class="text-xl font-semibold mb-4">${questionData.question}</p>
+                    <div id="options-container" class="space-y-4">
+                        ${questionData.options.map(option => `
+                            <button class="w-full text-left p-4 rounded-xl border border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700 transition-colors option-button" data-answer="${option}">
+                                ${option}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div id="explanation-container" class="mt-4 p-4 rounded-xl bg-gray-800 hidden"></div>
+                </div>
+            `;
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.addEventListener('click', checkAnswer);
+            });
+        }
+
+        function checkAnswer(e) {
+            const selectedAnswer = e.target.dataset.answer;
+            const questionData = quizQuestions[currentQuestionIndex];
+            const correctAnswer = questionData.answer;
+            const explanationContainer = document.getElementById('explanation-container');
+            
+            // Disable buttons after selection
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.disabled = true;
+            });
+
+            const isCorrect = selectedAnswer === correctAnswer;
+            if (isCorrect) {
+                e.target.classList.add('bg-green-700', 'border-green-500', 'text-white');
+                score++;
+                explanationContainer.innerHTML = `<p class="font-bold text-green-400">Richtig! 🎉</p><p class="text-gray-300 mt-1">${questionData.explanation}</p>`;
+            } else {
+                e.target.classList.add('bg-red-700', 'border-red-500', 'text-white');
+                // Highlight correct answer
+                document.querySelector(`[data-answer="${correctAnswer}"]`).classList.add('bg-green-700', 'border-green-500', 'text-white');
+                explanationContainer.innerHTML = `<p class="font-bold text-red-400">Falsch. 😔</p><p class="text-gray-300 mt-1">${questionData.explanation}</p>`;
+            }
+            
+            quizResults.push({
+                question: questionData.question,
+                userAnswer: selectedAnswer,
+                correctAnswer: correctAnswer,
+                isCorrect: isCorrect,
+                explanation: questionData.explanation
+            });
+
+            explanationContainer.classList.remove('hidden');
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = (currentQuestionIndex === quizQuestions.length - 1) ? 'Ergebnisse anzeigen' : 'Weiter';
+            nextButton.className = 'mt-4 px-6 py-3 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-colors';
+            nextButton.addEventListener('click', () => {
+                currentQuestionIndex++;
+                displayQuestion();
+            });
+            explanationContainer.appendChild(nextButton);
+        }
+
+        function showQuizResult() {
+            let resultHtml = `
+                <div class="text-center">
+                    <h3 class="text-2xl font-bold mb-4">Quiz beendet!</h3>
+                    <p class="text-xl mb-4">Ihre Punktzahl: <span class="text-blue-500 font-bold">${score} von ${quizQuestions.length}</span></p>
+                    <p class="text-lg text-gray-400">${score > quizQuestions.length / 2 ? 'Gut gemacht! Sie verstehen die Swarm-Grundlagen!' : 'Üben Sie weiter, Sie schaffen das!'}</p>
+                </div>
+                <hr class="my-6 border-gray-700">
+                <div class="space-y-6">
+                    <h4 class="text-2xl font-bold">Detaillierte Auswertung:</h4>
+                </div>
+            `;
+
+            quizResults.forEach((result, index) => {
+                const statusColor = result.isCorrect ? 'text-green-500' : 'text-red-500';
+                const statusText = result.isCorrect ? 'Richtig' : 'Falsch';
+                resultHtml += `
+                    <div class="p-4 rounded-lg bg-gray-800 border border-gray-700">
+                        <p class="font-bold text-lg mb-2">Frage ${index + 1}: ${result.question}</p>
+                        <p class="${statusColor}">Ihre Antwort: ${result.userAnswer} <span class="font-bold">(${statusText})</span></p>
+                        <p class="text-gray-400">Richtige Antwort: ${result.correctAnswer}</p>
+                        <p class="text-gray-500 mt-2">${result.explanation}</p>
+                    </div>
+                `;
+            });
+
+            resultHtml += `
+                <div class="text-center mt-6">
+                    <button onclick="window.location.reload();" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition-colors">Nochmal versuchen</button>
+                </div>
+            `;
+            quizContent.innerHTML = resultHtml;
+        }
+
+        // --- Knowledge Base Logic ---
+        const lexikonContent = document.getElementById('lexikon-content');
+        const lexikonSearch = document.getElementById('lexikon-search');
+
+        const lexikonData = [
+            {
+                term: "Docker Swarm",
+                definition: "Docker Swarm (im Swarm Mode) ist das native Cluster- und Orchestrierungstool von Docker. Es ermöglicht es, eine Gruppe von Docker Engines (Nodes) in einen einzigen, virtuellen Cluster zu verwandeln, um Anwendungen als **Services** über mehrere Hosts hinweg bereitzustellen, zu skalieren und zu verwalten. Es ist bekannt für seine einfache Einrichtung und Benutzerfreundlichkeit."
+            },
+            {
+                term: "Service",
+                definition: "Ein Service ist die Definition Ihrer Anwendung im Swarm. Er beschreibt den gewünschten Zustand: welches Container-Image verwendet werden soll, welche Ports geöffnet werden, welche Umgebungsvariablen benötigt werden und vor allem, wie viele **Tasks** (Replicas) des Containers laufen sollen. Der Swarm Manager sorgt dafür, dass dieser Zustand beibehalten wird.",
+                codeExample: `
+# Erstellt einen Service mit 3 Replicas
+docker service create \\
+  --name webapp \\
+  --replicas 3 \\
+  -p 8080:80 \\
+  nginx:latest
+`
+            },
+            {
+                term: "Task",
+                definition: "Ein Task ist die kleinste planbare Einheit in Docker Swarm und repräsentiert einen laufenden **Container**, der Teil eines Services ist. Jeder Task wird von einem Swarm Manager einem bestimmten Worker Node zugewiesen und wird dort ausgeführt. Wenn ein Container abstürzt, erstellt der Swarm Manager einen neuen Task, um den gewünschten Zustand (Replicas) wiederherzustellen. "
+            },
+            {
+                term: "Stack",
+                definition: "Ein Stack ist eine logische Gruppe von zusammengehörigen **Services**, Netzwerken und Volumes, die in einer einzigen Docker Compose YAML-Datei (Version 3) definiert ist. Der Befehl `docker stack deploy` wird verwendet, um eine komplette mehrschichtige Anwendung (den Stack) mit einem einzigen Befehl im Swarm bereitzustellen."
+            },
+            {
+                term: "Node",
+                definition: "Ein Node ist eine physische oder virtuelle Maschine, auf der die Docker Engine läuft. Nodes bilden zusammen den Docker Swarm. Es gibt zwei Arten: **Manager Nodes**, die die Orchestrierungsaufgaben erledigen (Planung, Statusüberwachung) und **Worker Nodes**, die die **Tasks** (Container) ausführen."
+            },
+            {
+                term: "Rolling Update",
+                definition: "Eine Update-Strategie, bei der eine neue Version eines Service schrittweise eingeführt wird. Docker Swarm ersetzt dabei alte Tasks nacheinander durch neue Tasks, um sicherzustellen, dass die Anwendung während des gesamten Update-Prozesses verfügbar bleibt (Zero-Downtime-Deployment). Parameter wie `--update-delay` und `--update-parallelism` steuern dieses Verhalten."
+            },
+            {
+                term: "Ingress Mesh (Routing Mesh)",
+                definition: "Das Ingress Routing Mesh ist der eingebaute Load Balancer von Docker Swarm. Er leitet Anfragen, die an einen beliebigen Node im Swarm gesendet werden, automatisch an einen der laufenden **Tasks** des Services weiter, egal auf welchem Node dieser Task läuft. Dadurch muss man sich keine Gedanken über die IP-Adresse einzelner Container machen."
+            },
+            {
+                term: "docker service",
+                definition: "Das zentrale Befehlszeilen-Tool zur Interaktion mit einzelnen Services in Docker Swarm. Es wird verwendet, um Services zu erstellen (`create`), den Zustand zu prüfen (`ls`, `ps`), die Skalierung anzupassen (`scale`) und Updates durchzuführen (`update`)."
+            }
+        ];
+
+        function renderLexikonSummary() {
+            lexikonSummary.innerHTML = `
+                <p class="text-lg font-semibold text-gray-200 mb-2">Was ist Docker Swarm?</p>
+                <p class="text-gray-300">
+                    Willkommen im Docker Swarm-Lexikon! Docker Swarm ist eine in die Docker Engine integrierte **Container-Orchestrierungsplattform**. Es ist darauf ausgelegt, einfach und schnell Cluster zu bilden, um Container als **Services** über mehrere Maschinen hinweg zu verteilen.
+                </p>
+                <p class="text-gray-300 mt-2">
+                    Stellen Sie sich Docker Swarm als eine Erweiterung der Docker Engine vor: Anstatt Container nur auf einer Maschine zu starten, bildet Swarm alle Ihre Maschinen zu einer einzigen, großen, gemeinsamen Ressource. Die **Manager Nodes** sind die Chefs, die alle Entscheidungen treffen. Die **Worker Nodes** sind die Arbeiter, die die Container (Tasks) ausführen.
+                </p>
+                <p class="text-gray-300 mt-2">
+                    Der größte Vorteil von Swarm ist seine **Einfachheit** und die native Integration in die Docker CLI, was es zur idealen Plattform für kleinere bis mittlere, hochverfügbare Anwendungen macht.
+                </p>
+            `;
+        }
+
+        function renderLexikon(data) {
+            lexikonContent.innerHTML = '';
+            if (data.length === 0) {
+                lexikonContent.innerHTML = '<p class="text-center text-gray-500">Keine Begriffe gefunden.</p>';
+            }
+            data.forEach(entry => {
+                const entryElement = document.createElement('div');
+                entryElement.classList.add('bg-gray-800', 'p-6', 'rounded-xl');
+                let codeHtml = '';
+                if (entry.codeExample) {
+                    codeHtml = `<pre class="code-block">${entry.codeExample.trim()}</pre>`;
+                }
+                entryElement.innerHTML = `
+                    <h3 class="text-xl font-bold text-gray-100 mb-2">${entry.term}</h3>
+                    <p class="text-gray-300">${entry.definition}</p>
+                    ${codeHtml}
+                `;
+                lexikonContent.appendChild(entryElement);
+            });
+        }
+
+        lexikonSearch.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredData = lexikonData.filter(entry => 
+                entry.term.toLowerCase().includes(searchTerm) || 
+                entry.definition.toLowerCase().includes(searchTerm)
+            );
+            renderLexikon(filteredData);
+        });
+
+        // Initial rendering of knowledge base
+        renderLexikon(lexikonData);
+        renderLexikonSummary();
+
+    </script>
+</body>
+</html>
